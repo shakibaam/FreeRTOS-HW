@@ -95,6 +95,7 @@
 //#include "queue.h"
 int counter1 = 0;
 int counter4 = 0;
+TaskHandle_t xHandle;
 
 /* Examples */
 #define ERTS2_TASKMANAGEMENT
@@ -112,11 +113,13 @@ void vTask1(void* parameter){
         vTaskDelay(pdMS_TO_TICKS(4750));
         sleep(250);
         
-        counter++;
-        if(counter==8){
+        counter1++;
+        // 8 * 250ms = 2s
+        // after 2s suspend
+        if(counter1==8){
             vTaskSuspend(xHandle);
             
-            counter = 0;
+            counter1 = 0;
         }
     }
 }
@@ -151,55 +154,56 @@ void vTask4(void* parameter){
         vTaskDelayUntil(&xLastWaketime , pdMS_TO_TICKS(4000));
         vTaskDelay(pdMS_TO_TICKS(3000));
         sleep(1);
-        counter++;
-        if(counter == 2){
+        counter4++;
+        //Resume Task1
+        if(counter4 == 2){
             vTaskResume(xHandle);
-            counter = 0;
+            counter4 = 0;
         }
         
     }
 }
 
-void AperiodicInterrupt(void* parameter){
-    TickType_t execution_time = 100;
-    TickType_t current_time = 0;
-    TickType_t previous_tick = 0;
-    TickType_t relative_deadline = 0;
-    TickType_t start_time = 0;
-    unint32_t execution_counter = 0;
-    while(1){
-        current_time = xTaskGetTickCount();
-        previous_tick = current_time;
-        start_time = current_time;
-        printf("Interrupt start\n");
-        while(execution_counter < execution_time) {
-            execution_counter++;
+// void AperiodicInterrupt(void* parameter){
+//     TickType_t execution_time = 100;
+//     TickType_t current_time = 0;
+//     TickType_t previous_tick = 0;
+//     TickType_t relative_deadline = 0;
+//     TickType_t start_time = 0;
+//     unint32_t execution_counter = 0;
+//     while(1){
+//         current_time = xTaskGetTickCount();
+//         previous_tick = current_time;
+//         start_time = current_time;
+//         printf("Interrupt start\n");
+//         while(execution_counter < execution_time) {
+//             execution_counter++;
             
-        }
+//         }
 
-        printf("Interrupt finish\n");
-        DD_Task_Delete(xTaskGetCurrentTaskHandle());
+//         printf("Interrupt finish\n");
+//         DD_Task_Delete(xTaskGetCurrentTaskHandle());
 
-    }
-}
+//     }
+// }
 
-void AperiodicTaskGenerator(void* parameter){
-    ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
-    printf("Aperiodc created\n");
-    DD_TaskHandle_t generated_task = DD_Task_Allocate();
-    generated_task->task_function = AperiodicInterrupt();
-    generated_task->task_name = "Interrupt1";
-    generated_task->task_type = DD_TT_Aperiodic();
+// void AperiodicTaskGenerator(void* parameter){
+//     ulTaskNotifyTake(pdTRUE,portMAX_DELAY);
+//     printf("Aperiodc created\n");
+//     DD_TaskHandle_t generated_task = DD_Task_Allocate();
+//     generated_task->task_function = AperiodicInterrupt();
+//     generated_task->task_name = "Interrupt1";
+//     generated_task->task_type = DD_TT_Aperiodic();
 
-    TickType_t current_time = xTaskGetTickCount();
-    generated_task->creation_time = current_time;
-    // generated_task->deadline = current_time;
+//     TickType_t current_time = xTaskGetTickCount();
+//     generated_task->creation_time = current_time;
+//     // generated_task->deadline = current_time;
 
-    DD_Task_Create(generated_task);
-}
+//     DD_Task_Create(generated_task);
+// }
 
 
-TaskHandle_t xHandle;
+
 #endif
 
 void vApplicationIdleHook(void);
@@ -212,7 +216,7 @@ int main ( void )
     xTaskCreate( vTask1, "Task 1", 1000, NULL, 4, &xHandle );
     xTaskCreate( vTask2, "Task 2", 1000, NULL, 3, NULL );
     xTaskCreate( vTask3, "Task 3", 1000, NULL, 2, NULL );
-    xTaskCreate( vTask4, "Task 1", 1000, NULL, 1, NULL );
+    xTaskCreate( vTask4, "Task 4", 1000, NULL, 1, NULL );
 
 
 #endif
